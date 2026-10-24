@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html, body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<title>파닉스 놀이터</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: one centered "worksheet" on ruled handwriting paper; picture on top, letter tiles below. Vowels red, consonants blue (classroom phonics convention). */
+:root {
+  --paper: #F6F8FC;
+  --rule: #CFDCF0;
+  --margin: #EBA3A3;
+  --ink: #1E2842;
+  --muted: #5A6785;
+  --tile: #FFFFFF;
+  --tile-edge: #D5DEEC;
+  --vowel: #D23838;
+  --cons: #2353BF;
+  --ok: #18915A;
+  --ok-soft: #DDF3E8;
+  --no-soft: #FBE3E3;
+  --star: #F0B12A;
+  --star-soft: #FCEFC9;
+  --font-letter: "Andika", "Comic Sans MS", system-ui, sans-serif;
+  --font-head: "Jua", "Gowun Dodum", system-ui, sans-serif;
+  --font-body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #13203A; --rule: #213459; --margin: #6B3A4A; --ink: #EEF2FA; --muted: #9BA9C6;
+    --tile: #1B2B4B; --tile-edge: #2C4170; --vowel: #FF7B7B; --cons: #8EB2FF; --ok: #4FD496;
+    --ok-soft: #173E33; --no-soft: #47222C; --star: #FFC94A; --star-soft: #4A3B12; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #13203A; --rule: #213459; --margin: #6B3A4A; --ink: #EEF2FA; --muted: #9BA9C6;
+  --tile: #1B2B4B; --tile-edge: #2C4170; --vowel: #FF7B7B; --cons: #8EB2FF; --ok: #4FD496;
+  --ok-soft: #173E33; --no-soft: #47222C; --star: #FFC94A; --star-soft: #4A3B12; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper);
+  background-image:
+    linear-gradient(90deg, transparent calc(max(16px, env(safe-area-inset-left, 0px)) + 18px), var(--margin) calc(max(16px, env(safe-area-inset-left, 0px)) + 18px), var(--margin) calc(max(16px, env(safe-area-inset-left, 0px)) + 20px), transparent calc(max(16px, env(safe-area-inset-left, 0px)) + 20px)),
+    repeating-linear-gradient(180deg, transparent 0 35px, var(--rule) 35px 36px);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  min-height: 100vh;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 640px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+h1 { font-family: var(--font-head); font-weight: 400; font-size: clamp(30px, 7vw, 42px); margin: 0; line-height: 1.05; text-wrap: balance; }
+h1 .v { color: var(--vowel); } h1 .c { color: var(--cons); }
+.sub { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+.score { display: flex; gap: 10px; font-family: var(--font-head); font-size: 18px; }
+.chip { background: var(--tile); border: 2px solid var(--tile-edge); border-radius: 999px; padding: 6px 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chip b { color: var(--star); font-weight: 400; }
+
+nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+nav button {
+  font-family: var(--font-head); font-size: 17px; color: var(--muted);
+  background: transparent; border: 2px dashed var(--tile-edge); border-radius: 14px;
+  padding: 10px 6px; cursor: pointer; line-height: 1.2;
+}
+nav button small { display: block; font-family: var(--font-body); font-size: 12px; margin-top: 2px; }
+nav button[aria-pressed="true"] { color: var(--ink); background: var(--tile); border-style: solid; border-color: var(--cons); }
+
+.board {
+  background: var(--tile); border: 2px solid var(--tile-edge); border-radius: 22px;
+  padding: 22px 18px 24px; display: grid; gap: 18px; justify-items: center; text-align: center;
+  box-shadow: 0 6px 0 var(--tile-edge);
+}
+.prompt { font-family: var(--font-head); font-size: 20px; margin: 0; }
+.pic-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.pic {
+  width: 132px; height: 132px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 76px; background: var(--paper); border: 3px solid var(--tile-edge); user-select: none;
+}
+.pic.hidden-pic { font-family: var(--font-letter); font-size: 64px; color: var(--muted); }
+.speak {
+  width: 58px; height: 58px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--cons); color: var(--tile); display: grid; place-items: center;
+}
+.speak svg { width: 28px; height: 28px; }
+.meaning { color: var(--muted); font-size: 15px; min-height: 1.4em; margin: 0; }
+
+/* three-line handwriting guide behind the word */
+.lines {
+  position: relative; padding: 0 18px; min-height: 92px; display: flex; align-items: center; gap: 4px;
+  background:
+    linear-gradient(var(--rule), var(--rule)) 0 18px / 100% 2px no-repeat,
+    repeating-linear-gradient(90deg, var(--margin) 0 8px, transparent 8px 14px) 0 46px / 100% 2px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 0 74px / 100% 2px no-repeat;
+}
+.ch {
+  font-family: var(--font-letter); font-size: 60px; line-height: 92px; min-width: 40px; height: 92px;
+  display: inline-block; transform: translateY(-9px);
+}
+.ch.v { color: var(--vowel); } .ch.c { color: var(--cons); }
+.ch.blank { color: var(--muted); }
+.slot { min-width: 48px; border-bottom: 0; }
+.slot.empty::after { content: "_"; color: var(--muted); }
+
+.tiles { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.tile {
+  font-family: var(--font-letter); font-size: 46px; line-height: 1; width: 82px; height: 82px;
+  border-radius: 18px; border: 2px solid var(--tile-edge); background: var(--tile); cursor: pointer;
+  box-shadow: 0 5px 0 var(--tile-edge); transition: transform .12s, box-shadow .12s;
+}
+.tile.v { color: var(--vowel); } .tile.c { color: var(--cons); }
+.tile:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--tile-edge); }
+.tile.right { background: var(--ok-soft); border-color: var(--ok); box-shadow: 0 5px 0 var(--ok); }
+.tile.wrong { background: var(--no-soft); opacity: .45; cursor: default; animation: shake .35s; }
+.tile.used { visibility: hidden; }
+.tile:disabled { cursor: default; }
+button:focus-visible { outline: 3px solid var(--star); outline-offset: 3px; }
+
+.feedback { font-family: var(--font-head); font-size: 22px; min-height: 30px; margin: 0; }
+.feedback.ok { color: var(--ok); } .feedback.no { color: var(--vowel); }
+.next {
+  font-family: var(--font-head); font-size: 20px; border: 0; border-radius: 999px; cursor: pointer;
+  padding: 12px 28px; background: var(--ok); color: var(--tile);
+}
+.legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; color: var(--muted); font-size: 14px; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; background: currentColor; vertical-align: 0; }
+.legend .lv { color: var(--vowel); } .legend .lc { color: var(--cons); }
+.legend em { font-style: normal; color: var(--muted); }
+.note { color: var(--muted); font-size: 14px; text-align: center; margin: 0; }
+
+.kids { display: grid; gap: 8px; }
+.kids .sec-label { margin: 0; }
+.kid-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.kid { display: flex; align-items: center; gap: 4px; }
+.kid-pick {
+  display: flex; align-items: center; gap: 6px; font-family: var(--font-head); font-size: 18px; color: var(--ink);
+  background: var(--tile); border: 2px solid var(--tile-edge); border-radius: 999px; padding: 5px 14px 5px 6px; cursor: pointer;
+}
+.kid-icon { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; background: var(--paper); }
+.kid-pick[aria-pressed="true"] { border-color: var(--ok); background: var(--ok-soft); }
+.kid-pick[aria-pressed="true"] .kid-icon { background: var(--tile); }
+.kid-add, .kid-manage, .ghost, .mini {
+  font-family: var(--font-body); font-size: 14px; color: var(--muted); cursor: pointer;
+  background: transparent; border: 2px dashed var(--tile-edge); border-radius: 999px; padding: 8px 14px;
+}
+.kid-manage { border-style: solid; border-color: transparent; text-decoration: underline; text-underline-offset: 3px; }
+.mini { width: 32px; height: 32px; padding: 0; border-style: solid; font-size: 14px; }
+.panel {
+  background: var(--tile); border: 2px solid var(--tile-edge); border-radius: 18px; padding: 16px;
+  display: grid; gap: 10px;
+}
+.panel p { margin: 0; }
+.panel-title { font-family: var(--font-head); font-size: 20px; }
+.panel label { font-size: 14px; color: var(--muted); }
+.panel input {
+  font: 18px var(--font-body); color: var(--ink); background: var(--paper); width: 100%;
+  border: 2px solid var(--tile-edge); border-radius: 12px; padding: 10px 12px;
+}
+.panel input:focus-visible { outline: 3px solid var(--star); outline-offset: 1px; }
+.animals { display: flex; flex-wrap: wrap; gap: 8px; }
+.animals button {
+  width: 46px; height: 46px; font-size: 26px; border-radius: 50%; cursor: pointer;
+  background: var(--paper); border: 2px solid var(--tile-edge);
+}
+.animals button[aria-checked="true"] { border-color: var(--ok); background: var(--ok-soft); }
+.panel-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.panel-actions .next { font-size: 18px; padding: 10px 24px; }
+.danger { font-family: var(--font-head); font-size: 18px; border: 0; border-radius: 999px; padding: 10px 24px; cursor: pointer; background: var(--vowel); color: var(--tile); }
+
+.record {
+  background: var(--tile); border: 2px solid var(--tile-edge); border-radius: 22px;
+  padding: 20px 18px; display: grid; gap: 16px;
+}
+.record-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.record h2 { font-family: var(--font-head); font-weight: 400; font-size: 24px; margin: 0; }
+.save-status { font-size: 13px; color: var(--muted); }
+.save-status.cloud { color: var(--ok); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { background: var(--paper); border-radius: 14px; padding: 10px 8px; text-align: center; }
+.stat b { display: block; font-family: var(--font-head); font-weight: 400; font-size: 26px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+.modes { display: grid; gap: 10px; }
+.mode-row { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 10px; font-size: 14px; }
+.mode-row .bar { height: 12px; border-radius: 999px; background: var(--paper); overflow: hidden; }
+.mode-row .bar i { display: block; height: 100%; background: var(--ok); border-radius: 999px; }
+.mode-row .num { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sec-label { font-size: 13px; color: var(--muted); letter-spacing: .02em; margin: 0 0 8px; }
+.alpha { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 6px; }
+.alpha span {
+  font-family: var(--font-letter); font-size: 22px; text-align: center; line-height: 40px; height: 40px;
+  border-radius: 10px; border: 2px solid var(--tile-edge); color: var(--muted);
+}
+.alpha .learning { background: var(--no-soft); border-color: transparent; color: var(--ink); }
+.alpha .good { background: var(--ok-soft); border-color: transparent; color: var(--ink); }
+.alpha .master { background: var(--star-soft); border-color: var(--star); color: var(--ink); }
+.key { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.key i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 5px; vertical-align: -1px; border: 2px solid var(--tile-edge); }
+.key .k-learning { background: var(--no-soft); border-color: transparent; }
+.key .k-good { background: var(--ok-soft); border-color: transparent; }
+.key .k-master { background: var(--star-soft); border-color: var(--star); }
+.weak { margin: 0; font-size: 15px; }
+.weak b { font-family: var(--font-letter); font-size: 20px; color: var(--vowel); font-weight: 700; margin-right: 6px; }
+
+.burst { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+.burst i { position: absolute; font-style: normal; font-size: 26px; animation: fly 1s ease-out forwards; }
+.banner {
+  position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 18px); transform: translateX(-50%);
+  background: var(--star); color: #2A1E00; font-family: var(--font-head); font-size: 20px;
+  padding: 10px 22px; border-radius: 999px; z-index: 6; white-space: nowrap; animation: drop .4s ease-out;
+}
+@keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-7px) } 75% { transform: translateX(7px) } }
+@keyframes fly { from { transform: translate(0,0) scale(.6); opacity: 1 } to { transform: translate(var(--dx), var(--dy)) scale(1.2); opacity: 0 } }
+@keyframes drop { from { transform: translate(-50%, -30px); opacity: 0 } to { transform: translate(-50%, 0); opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .tile.wrong, .burst i, .banner { animation: none; } .burst { display: none; } }
+@media (max-width: 420px) {
+  .tile { width: 68px; height: 68px; font-size: 38px; }
+  .pic { width: 110px; height: 110px; font-size: 62px; }
+  .ch { font-size: 50px; min-width: 32px; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="c">P</span>h<span class="v">o</span>n<span class="v">i</span>cs 놀이터</h1>
+      <p class="sub">소리를 듣고, 그림을 보고, 글자로 단어를 만들어요</p>
+    </div>
+    <div class="score" aria-live="polite">
+      <span class="chip"><b>★</b> <span id="stars">0</span></span>
+      <span class="chip">연속 <span id="streak">0</span></span>
+    </div>
+  </header>
+
+  <section class="kids" aria-label="누가 놀이하나요">
+    <p class="sec-label">누가 놀이하나요?</p>
+    <div class="kid-row" id="kid-row"></div>
+    <form class="panel" id="kid-form" hidden>
+      <p class="panel-title" id="kid-form-title">새 친구 추가</p>
+      <label for="kid-name">이름</label>
+      <input id="kid-name" maxlength="12" autocomplete="off" placeholder="예: 서윤">
+      <div class="animals" id="kid-animals" role="radiogroup" aria-label="동물 고르기"></div>
+      <div class="panel-actions"><button type="submit" class="next">저장</button><button type="button" class="ghost" id="kid-cancel">취소</button></div>
+    </form>
+    <div class="panel" id="kid-confirm" hidden>
+      <p id="confirm-text"></p>
+      <div class="panel-actions"><button type="button" class="danger" id="confirm-yes">지우기</button><button type="button" class="ghost" id="confirm-no">취소</button></div>
+    </div>
+  </section>
+
+  <nav aria-label="놀이 고르기">
+    <button id="m-first" data-mode="first" aria-pressed="true">첫소리 찾기<small>그림 보고 첫 글자</small></button>
+    <button id="m-listen" data-mode="listen" aria-pressed="false">귀 쫑긋<small>듣고 글자 고르기</small></button>
+    <button id="m-build" data-mode="build" aria-pressed="false">단어 만들기<small>c-a-t 이어 붙이기</small></button>
+  </nav>
+
+  <section class="board" id="board" aria-live="polite"></section>
+
+  <div class="legend"><span class="lv">모음 a e i o u</span><span class="lc">자음</span><em>스피커를 누르면 영어 소리가 나와요</em></div>
+  <p class="note" id="speech-note" hidden>이 브라우저는 읽어 주기 기능이 없어서, 귀 쫑긋 놀이에서는 그림을 먼저 보여 줘요.</p>
+
+  <section class="record" aria-labelledby="record-title">
+    <div class="record-head">
+      <h2 id="record-title">나의 학습 기록</h2>
+      <span class="save-status" id="save-status">이 기기에 저장돼요</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="r-stars">0</b><span>모은 별</span></div>
+      <div class="stat"><b id="r-best">0</b><span>최고 연속</span></div>
+      <div class="stat"><b id="r-acc">–</b><span>정답률</span></div>
+    </div>
+    <div class="modes" id="r-modes"></div>
+    <div>
+      <p class="sec-label">알파벳 소리 익히기</p>
+      <div class="alpha" id="r-alpha"></div>
+      <div class="key"><span><i></i>아직 안 해 봤어요</span><span><i class="k-learning"></i>연습 중</span><span><i class="k-good"></i>잘해요</span><span><i class="k-master"></i>완벽해요</span></div>
+    </div>
+    <p class="weak" id="r-weak"></p>
+  </section>
+</div>
+
+<script>
+const FIRST = [
+  ["apple","🍎","사과"],["ant","🐜","개미"],["ball","⚽","공"],["bear","🐻","곰"],["cat","🐱","고양이"],["cake","🍰","케이크"],
+  ["dog","🐶","개"],["duck","🦆","오리"],["egg","🥚","달걀"],["elephant","🐘","코끼리"],["fish","🐟","물고기"],["fox","🦊","여우"],
+  ["goat","🐐","염소"],["grapes","🍇","포도"],["hat","🎩","모자"],["horse","🐴","말"],["iguana","🦎","이구아나"],["jam","🍯","잼"],
+  ["juice","🧃","주스"],["kite","🪁","연"],["key","🔑","열쇠"],["lion","🦁","사자"],["lemon","🍋","레몬"],["moon","🌙","달"],
+  ["monkey","🐵","원숭이"],["nose","👃","코"],["nut","🥜","땅콩"],["octopus","🐙","문어"],["pig","🐷","돼지"],["pizza","🍕","피자"],
+  ["queen","👸","여왕"],["rabbit","🐰","토끼"],["rocket","🚀","로켓"],["sun","☀️","해"],["snake","🐍","뱀"],["tiger","🐯","호랑이"],
+  ["tree","🌳","나무"],["umbrella","☂️","우산"],["van","🚐","승합차"],["violin","🎻","바이올린"],["whale","🐳","고래"],["watch","⌚","손목시계"],
+  ["yo-yo","🪀","요요"],["zebra","🦓","얼룩말"]
+];
+const CVC = [
+  ["cat","🐱","고양이"],["dog","🐶","개"],["pig","🐷","돼지"],["sun","☀️","해"],["bus","🚌","버스"],["hat","🎩","모자"],
+  ["bed","🛏️","침대"],["fox","🦊","여우"],["hen","🐔","암탉"],["cup","☕","컵"],["box","📦","상자"],["bug","🐛","벌레"],
+  ["pen","🖊️","펜"],["web","🕸️","거미줄"],["van","🚐","승합차"],["rat","🐀","쥐"],["bat","🦇","박쥐"],["ten","🔟","열"],
+  ["six","6️⃣","여섯"],["leg","🦵","다리"],["ant","🐜","개미"],["map","🗺️","지도"],["mud","🟤","진흙"],["jet","✈️","제트기"]
+];
+const VOWELS = "aeiou";
+const LETTERS = "abcdefghijklmnoprstuvwyz";
+const PRAISE = ["Great job!","Super!","Awesome!","Well done!","Yes!"];
+
+const $ = id => document.getElementById(id);
+const board = $("board");
+const rand = n => Math.floor(Math.random() * n);
+const pick = a => a[rand(a.length)];
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const kind = ch => VOWELS.includes(ch) ? "v" : "c";
+
+const hasSpeech = "speechSynthesis" in window;
+let voice = null;
+function loadVoice() {
+  if (!hasSpeech) return;
+  const vs = speechSynthesis.getVoices().filter(v => /^en(-|_)/i.test(v.lang));
+  voice = vs.find(v => /en.US/i.test(v.lang) && /female|samantha|google|zira|aria|jenny/i.test(v.name)) || vs.find(v => /en.US/i.test(v.lang)) || vs[0] || null;
+}
+if (hasSpeech) { loadVoice(); speechSynthesis.onvoiceschanged = loadVoice; } else { $("speech-note").hidden = false; }
+function speak(text, rate = 0.8) {
+  if (!hasSpeech) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.replace("-", " "));
+  u.lang = "en-US"; u.rate = rate; if (voice) u.voice = voice;
+  speechSynthesis.speak(u);
+}
+
+let audio = null;
+function tone(freqs, type = "sine", len = 0.12) {
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    freqs.forEach((f, i) => {
+      const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + i * len;
+      o.type = type; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.18, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + len * 1.6);
+      o.connect(g).connect(audio.destination); o.start(t); o.stop(t + len * 1.8);
+    });
+  } catch (e) {}
+}
+const chime = () => tone([660, 880, 1175]);
+const buzz = () => tone([180, 150], "triangle", 0.14);
+
+let state = { mode: "first", streak: 0 };
+
+/* Learning records, one per child profile. Signed-in viewers keep them in their own private db subtree:
+   data/users/<id>/profiles holds the profile list, data/users/<id>/kid-<pid> holds each child's record.
+   Everyone also keeps a copy in this browser, used when the account store is unavailable. */
+const MODE_NAMES = { first: "첫소리 찾기", listen: "귀 쫑긋", build: "단어 만들기" };
+const ANIMALS = ["🐰", "🐻", "🦊", "🐼", "🐯", "🐸", "🐧", "🦄"];
+const LOCAL_KEY = "phonics-kids";
+function blankProgress() {
+  return { stars: 0, best: 0, modes: { first: { r: 0, w: 0 }, listen: { r: 0, w: 0 }, build: { r: 0, w: 0 } }, letters: {}, words: {}, updatedAt: null };
+}
+function normalize(p) {
+  const b = blankProgress();
+  if (!p || typeof p !== "object") return b;
+  return {
+    stars: +p.stars || 0, best: +p.best || 0,
+    modes: { ...b.modes, ...(p.modes || {}) },
+    letters: { ...(p.letters || {}) }, words: { ...(p.words || {}) },
+    updatedAt: p.updatedAt || null
+  };
+}
+const total = p => Object.values(p.modes).reduce((n, m) => n + m.r + m.w, 0);
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+function cleanKids(k) {
+  const list = Array.isArray(k && k.list) ? k.list.filter(x => x && typeof x.id === "string" && /^[a-z0-9]+$/.test(x.id))
+    .map(x => ({ id: x.id, name: String(x.name || "").slice(0, 12) || "우리 아이", icon: ANIMALS.includes(x.icon) ? x.icon : ANIMALS[0] })) : [];
+  return { list, active: list.some(x => x.id === (k && k.active)) ? k.active : (list[0] ? list[0].id : null) };
+}
+
+let kids = { list: [], active: null };
+let records = {};          // pid -> progress
+let progress = blankProgress();
+
+function ensureKid() {
+  if (!kids.list.length) {
+    const id = newId();
+    kids.list.push({ id, name: "우리 아이", icon: ANIMALS[0] });
+    kids.active = id;
+  }
+  if (!kids.list.some(k => k.id === kids.active)) kids.active = kids.list[0].id;
+  records[kids.active] = records[kids.active] || blankProgress();
+  progress = records[kids.active];
+}
+const activeKid = () => kids.list.find(k => k.id === kids.active);
+
+try {
+  const saved = JSON.parse(localStorage.getItem(LOCAL_KEY) || "null");
+  if (saved) {
+    kids = cleanKids(saved);
+    for (const k of kids.list) records[k.id] = normalize(saved.records && saved.records[k.id]);
+  } else {
+    // records from the single-profile version become the first child's
+    const old = JSON.parse(localStorage.getItem("phonics-progress") || "null");
+    if (old) { ensureKid(); records[kids.active] = normalize(old); }
+  }
+} catch (e) {}
+ensureKid();
+
+let cloud = null, writing = false, saveTimer = null;
+const dirty = new Set();   // "profiles" or a kid id
+function setStatus(text, ok) { const s = $("save-status"); s.textContent = text; s.classList.toggle("cloud", !!ok); }
+function saveLocal() {
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ ...kids, records })); } catch (e) {}
+}
+function queue(key) {
+  saveLocal();
+  if (!cloud) return;
+  dirty.add(key); clearTimeout(saveTimer); saveTimer = setTimeout(flush, 700);
+}
+function save() { progress.updatedAt = new Date().toISOString(); queue(kids.active); }
+const saveProfiles = () => queue("profiles");
+
+async function writeKey(key) {
+  if (key === "profiles") return cloud.doc("profiles").set({ list: kids.list.map(k => ({ ...k })), active: kids.active });
+  if (key.startsWith("del:")) return cloud.doc("kid-" + key.slice(4)).delete();
+  if (records[key]) return cloud.doc("kid-" + key).set(JSON.parse(JSON.stringify(records[key])));
+}
+async function flush() {
+  if (writing || !cloud) return;
+  writing = true;
+  try {
+    while (dirty.size && cloud) {
+      const key = dirty.values().next().value; dirty.delete(key);
+      try { await writeKey(key); }
+      catch (e) {
+        if (e && e.code === "unavailable") { await new Promise(r => setTimeout(r, 800 + rand(800))); await writeKey(key); }
+        else throw e;
+      }
+    }
+  } catch (e) {
+    cloud = null;
+    setStatus(e && e.code === "invalid_argument" ? "보기 권한이라 이 기기에만 저장돼요" : "계정 저장이 안 돼서 이 기기에만 저장돼요");
+  } finally { writing = false; }
+}
+
+async function connectAccount() {
+  if (!window.claude?.use) return;
+  const [user, db] = await Promise.all([claude.use("user"), claude.use("db")]);
+  if (!user || !db) return;
+  const uid = await user.id();
+  if (!uid) return;
+  const col = db.collection(`data/users/${uid}`);
+  try {
+    const snap = await col.doc("profiles").get();
+    if (snap.exists) {
+      const remote = cleanKids(snap.data());
+      const remoteRecords = {};
+      await Promise.all(remote.list.map(async k => {
+        const s = await col.doc("kid-" + k.id).get();
+        remoteRecords[k.id] = normalize(s.exists ? s.data() : null);
+      }));
+      // a child added on this device before the account was reachable is kept alongside the account's children
+      for (const k of kids.list) {
+        if (!remote.list.some(r => r.id === k.id) && total(records[k.id] || blankProgress()) > 0) {
+          remote.list.push(k); remoteRecords[k.id] = records[k.id];
+        }
+      }
+      if (remote.list.length) {
+        kids = { list: remote.list, active: remote.list.some(k => k.id === kids.active) ? kids.active : remote.active };
+        records = remoteRecords;
+      }
+    } else {
+      // first visit with profiles: the single record from the earlier version becomes the first child's
+      const old = await col.doc("progress").get();
+      if (old.exists && total(normalize(old.data())) > total(records[kids.active])) records[kids.active] = normalize(old.data());
+      dirty.add("profiles"); for (const k of kids.list) dirty.add(k.id);
+    }
+    ensureKid();
+    cloud = col;
+    setStatus("내 계정에 저장돼요", true);
+    saveLocal(); renderKids(); renderScore(); renderRecord();
+    if (dirty.size) flush();
+  } catch (e) { setStatus("계정 기록을 못 불러와서 이 기기에만 저장돼요"); }
+}
+
+/* Profile picker */
+let managing = false, editingId = null, pendingIcon = ANIMALS[0], confirmId = null;
+function renderKids() {
+  const row = $("kid-row"); row.textContent = "";
+  for (const k of kids.list) {
+    const wrap = document.createElement("div"); wrap.className = "kid";
+    const b = document.createElement("button");
+    b.className = "kid-pick"; b.setAttribute("aria-pressed", k.id === kids.active);
+    const ic = document.createElement("span"); ic.className = "kid-icon"; ic.textContent = k.icon;
+    const nm = document.createElement("span"); nm.textContent = k.name;
+    b.append(ic, nm);
+    b.onclick = () => switchKid(k.id);
+    wrap.appendChild(b);
+    if (managing) {
+      const ed = document.createElement("button"); ed.className = "mini"; ed.textContent = "✎"; ed.setAttribute("aria-label", `${k.name} 이름 바꾸기`);
+      ed.onclick = () => openForm(k.id);
+      const del = document.createElement("button"); del.className = "mini"; del.textContent = "✕"; del.setAttribute("aria-label", `${k.name} 지우기`);
+      del.onclick = () => askDelete(k.id);
+      wrap.append(ed, del);
+    }
+    row.appendChild(wrap);
+  }
+  const add = document.createElement("button"); add.className = "kid-add"; add.textContent = "+ 아이 추가";
+  add.onclick = () => openForm(null);
+  const mg = document.createElement("button"); mg.className = "kid-manage"; mg.textContent = managing ? "완료" : "관리";
+  mg.onclick = () => { managing = !managing; closePanels(); renderKids(); };
+  row.append(add, mg);
+  const k = activeKid();
+  $("record-title").textContent = `${k.icon} ${k.name}의 학습 기록`;
+}
+function closePanels() { $("kid-form").hidden = true; $("kid-confirm").hidden = true; editingId = null; confirmId = null; }
+function renderAnimals() {
+  $("kid-animals").innerHTML = ANIMALS.map(a => `<button type="button" role="radio" aria-checked="${a === pendingIcon}" aria-label="동물 ${a}">${a}</button>`).join("");
+  $("kid-animals").querySelectorAll("button").forEach((b, i) => b.onclick = () => { pendingIcon = ANIMALS[i]; renderAnimals(); });
+}
+function openForm(id) {
+  closePanels();
+  editingId = id;
+  const k = id && kids.list.find(x => x.id === id);
+  $("kid-form-title").textContent = k ? "이름 바꾸기" : "새 친구 추가";
+  $("kid-name").value = k ? k.name : "";
+  pendingIcon = k ? k.icon : ANIMALS[kids.list.length % ANIMALS.length];
+  renderAnimals();
+  $("kid-form").hidden = false; $("kid-name").focus();
+}
+$("kid-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = $("kid-name").value.trim().slice(0, 12);
+  if (!name) { $("kid-name").focus(); return; }
+  if (editingId) {
+    const k = kids.list.find(x => x.id === editingId); k.name = name; k.icon = pendingIcon;
+  } else {
+    const id = newId();
+    kids.list.push({ id, name, icon: pendingIcon }); records[id] = blankProgress();
+    closePanels(); saveProfiles(); switchKid(id); return;
+  }
+  closePanels(); saveProfiles(); renderKids();
+});
+$("kid-cancel").onclick = closePanels;
+function askDelete(id) {
+  closePanels();
+  if (kids.list.length < 2) { $("confirm-text").textContent = "아이가 한 명뿐이라 지울 수 없어요. 이름을 바꿔 보세요."; $("confirm-yes").hidden = true; }
+  else {
+    const k = kids.list.find(x => x.id === id);
+    $("confirm-text").textContent = `${k.icon} ${k.name}의 프로필과 학습 기록을 지울까요? 지운 기록은 되돌릴 수 없어요.`;
+    $("confirm-yes").hidden = false;
+  }
+  confirmId = id; $("kid-confirm").hidden = false;
+}
+$("confirm-no").onclick = closePanels;
+$("confirm-yes").onclick = () => {
+  const id = confirmId; closePanels();
+  kids.list = kids.list.filter(k => k.id !== id); delete records[id];
+  if (cloud) { dirty.delete(id); queue("del:" + id); }
+  if (kids.active === id) switchKid(kids.list[0].id); else { saveProfiles(); renderKids(); }
+};
+function switchKid(id) {
+  if (!kids.list.some(k => k.id === id)) return;
+  if (id !== kids.active) { kids.active = id; state.streak = 0; lastWord = ""; }
+  ensureKid(); saveProfiles();
+  renderKids(); renderScore(); renderRecord(); newRound();
+}
+
+function track(mode, letter, word, ok) {
+  const k = ok ? "r" : "w";
+  progress.modes[mode][k]++;
+  const L = progress.letters[letter] || (progress.letters[letter] = { r: 0, w: 0 });
+  L[k]++;
+  const W = progress.words[word] || (progress.words[word] = { r: 0, w: 0 });
+  W[k]++;
+  if (!ok) save();
+  renderRecord();
+}
+
+function renderScore() { $("stars").textContent = progress.stars; $("streak").textContent = state.streak; }
+function levelOf(l) {
+  const s = progress.letters[l];
+  if (!s || s.r + s.w === 0) return "";
+  const acc = s.r / (s.r + s.w);
+  if (acc >= 0.85 && s.r >= 3) return "master";
+  return acc >= 0.6 ? "good" : "learning";
+}
+function weakLetters() {
+  return Object.entries(progress.letters)
+    .filter(([, s]) => s.w > 0 && s.w / (s.r + s.w) > 0.25)
+    .sort((a, b) => b[1].w / (b[1].r + b[1].w) - a[1].w / (a[1].r + a[1].w) || b[1].w - a[1].w)
+    .slice(0, 5).map(([l]) => l);
+}
+function renderRecord() {
+  const all = Object.values(progress.modes).reduce((a, m) => ({ r: a.r + m.r, w: a.w + m.w }), { r: 0, w: 0 });
+  $("r-stars").textContent = progress.stars;
+  $("r-best").textContent = progress.best;
+  $("r-acc").textContent = all.r + all.w ? Math.round(all.r / (all.r + all.w) * 100) + "%" : "–";
+  $("r-modes").innerHTML = Object.entries(MODE_NAMES).map(([m, name]) => {
+    const s = progress.modes[m], n = s.r + s.w, pct = n ? Math.round(s.r / n * 100) : 0;
+    return `<div class="mode-row"><span>${name}</span><span class="bar"><i style="width:${pct}%"></i></span><span class="num">${n ? `${pct}% · ${s.r}/${n}` : "아직 안 했어요"}</span></div>`;
+  }).join("");
+  $("r-alpha").innerHTML = [..."abcdefghijklmnopqrstuvwxyz"].map(l => {
+    const s = progress.letters[l], lv = levelOf(l);
+    const tip = s ? `${l}: 맞힘 ${s.r}, 틀림 ${s.w}` : `${l}: 아직 안 해 봤어요`;
+    return `<span class="${lv}" title="${tip}" aria-label="${tip}">${l}</span>`;
+  }).join("");
+  const weak = weakLetters();
+  $("r-weak").innerHTML = weak.length
+    ? `더 연습할 글자 ${weak.map(l => `<b>${l}</b>`).join("")}<span style="color:var(--muted);font-size:13px">· 문제에 더 자주 나와요</span>`
+    : `<span style="color:var(--muted)">많이 틀린 글자는 여기에 모아서 문제에 더 자주 내 줄게요.</span>`;
+}
+
+let lastWord = "", advanceTimer = null;
+function nextItem(list) {
+  const weak = weakLetters();
+  const focus = weak.length && Math.random() < 0.4
+    ? list.filter(([w]) => state.mode === "build" ? [...w].some(c => weak.includes(c)) : weak.includes(w[0]))
+    : [];
+  const pool = focus.length > 1 ? focus : list;
+  let it; do { it = pick(pool); } while (it[0] === lastWord && pool.length > 1);
+  lastWord = it[0]; return it;
+}
+
+const SPEAKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+
+function wordLetters(word, opts = {}) {
+  return [...word].map((ch, i) => {
+    if (ch === "-") return '<span class="ch">-</span>';
+    if (opts.blankFirst && i === 0) return '<span class="ch blank" id="first-slot">_</span>';
+    return `<span class="ch ${kind(ch)}">${ch}</span>`;
+  }).join("");
+}
+
+function letterChoices(correct, n = 4) {
+  const pool = shuffle([...LETTERS].filter(l => l !== correct)).slice(0, n - 1);
+  return shuffle([correct, ...pool]);
+}
+
+function win(msg) {
+  progress.stars++; state.streak++; progress.best = Math.max(progress.best, state.streak);
+  renderScore(); renderRecord(); save(); chime(); burst();
+  if (state.streak > 0 && state.streak % 5 === 0) banner(`${state.streak}개 연속 정답! 대단해요 ★`);
+  const fb = board.querySelector(".feedback"); fb.className = "feedback ok"; fb.textContent = msg || pick(PRAISE);
+  const nx = board.querySelector(".next"); nx.hidden = false; nx.focus({ preventScroll: true });
+  clearTimeout(advanceTimer); advanceTimer = setTimeout(newRound, 2600);
+}
+function miss(btn, msg) {
+  state.streak = 0; renderScore(); buzz();
+  if (btn) { btn.classList.add("wrong"); btn.disabled = true; }
+  const fb = board.querySelector(".feedback"); fb.className = "feedback no"; fb.textContent = msg || "다시 해 봐요!";
+}
+
+function frame({ prompt, pic, hidePic, word, meaning, lines }) {
+  board.innerHTML = `
+    <p class="prompt">${prompt}</p>
+    <div class="pic-row">
+      <div class="pic ${hidePic ? "hidden-pic" : ""}" id="pic" aria-label="${hidePic ? "숨은 그림" : word}">${hidePic ? "?" : pic}</div>
+      <button class="speak" id="say" aria-label="소리 듣기">${SPEAKER}</button>
+    </div>
+    <div class="lines" id="lines">${lines}</div>
+    <p class="meaning" id="meaning">${meaning}</p>
+    <div class="tiles" id="tiles"></div>
+    <p class="feedback"></p>
+    <button class="next" hidden>다음 문제 →</button>`;
+  $("say").onclick = () => speak(word);
+  board.querySelector(".next").onclick = newRound;
+}
+
+function roundFirst() {
+  const [word, pic, ko] = nextItem(FIRST);
+  const first = word[0];
+  frame({ prompt: "이 그림은 어떤 글자로 시작할까요?", pic, word, meaning: ko, lines: wordLetters(word, { blankFirst: true }) });
+  letterChoices(first).forEach(l => addTile(l, btn => {
+    if (l === first) {
+      btn.classList.add("right"); disableTiles();
+      const s = $("first-slot"); s.className = `ch ${kind(first)}`; s.textContent = first;
+      track("first", first, word, true);
+      speak(word); win(`${first.toUpperCase()} ${first}, ${word}!`);
+    } else { track("first", first, word, false); speak(l, 0.9); miss(btn, `${l}가 아니에요. 다시!`); }
+  }));
+}
+
+function roundListen() {
+  const [word, pic, ko] = nextItem(FIRST);
+  const first = word[0];
+  frame({ prompt: "잘 듣고, 첫소리 글자를 골라요", pic, hidePic: hasSpeech, word, meaning: hasSpeech ? "스피커를 다시 눌러도 돼요" : ko,
+          lines: [...word].map(() => '<span class="ch blank">_</span>').join("") });
+  setTimeout(() => speak(word), 250);
+  letterChoices(first).forEach(l => addTile(l, btn => {
+    if (l === first) {
+      btn.classList.add("right"); disableTiles();
+      const p = $("pic"); p.className = "pic"; p.textContent = pic;
+      $("lines").innerHTML = wordLetters(word); $("meaning").textContent = ko;
+      track("listen", first, word, true);
+      speak(word); win();
+    } else { track("listen", first, word, false); miss(btn, "음… 한 번 더 들어 볼까요?"); setTimeout(() => speak(word), 450); }
+  }));
+}
+
+function roundBuild() {
+  const [word, pic, ko] = nextItem(CVC);
+  const extra = pick([...LETTERS].filter(l => !word.includes(l)));
+  frame({ prompt: "글자를 순서대로 눌러 단어를 만들어요", pic, word, meaning: ko,
+          lines: [...word].map((_, i) => `<span class="ch slot empty" id="slot-${i}"></span>`).join("") });
+  let pos = 0;
+  shuffle([...word, extra]).forEach(l => addTile(l, btn => {
+    if (l === word[pos]) {
+      btn.classList.add("used"); btn.disabled = true;
+      const s = $(`slot-${pos}`); s.className = `ch ${kind(l)}`; s.textContent = l;
+      speak(l, 1); tone([520 + pos * 120], "sine", 0.08);
+      track("build", l, word, true);
+      pos++;
+      if (pos === word.length) { disableTiles(); setTimeout(() => speak(word, 0.7), 500); win(`${[...word].join(" - ")} → ${word}!`); }
+    } else {
+      track("build", word[pos], word, false);
+      miss(null, `${pos + 1}번째 소리는 ${l}가 아니에요`);
+      btn.classList.add("wrong"); setTimeout(() => btn.classList.remove("wrong"), 400);
+    }
+  }));
+}
+
+function addTile(letter, onTap) {
+  const b = document.createElement("button");
+  b.className = `tile ${kind(letter)}`; b.textContent = letter; b.setAttribute("aria-label", `글자 ${letter}`);
+  b.onclick = () => { if (!b.disabled) onTap(b); };
+  $("tiles").appendChild(b);
+}
+function disableTiles() { board.querySelectorAll(".tile").forEach(t => t.disabled = true); }
+
+function newRound() {
+  clearTimeout(advanceTimer);
+  ({ first: roundFirst, listen: roundListen, build: roundBuild })[state.mode]();
+}
+
+function burst() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box = document.createElement("div"); box.className = "burst";
+  const r = $("pic").getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement("i"); s.textContent = pick(["★", "✦", "●"]);
+    s.style.color = pick(["var(--star)", "var(--vowel)", "var(--cons)", "var(--ok)"]);
+    s.style.left = cx + "px"; s.style.top = cy + "px";
+    const a = (i / 14) * Math.PI * 2, d = 90 + rand(70);
+    s.style.setProperty("--dx", Math.cos(a) * d + "px"); s.style.setProperty("--dy", Math.sin(a) * d + "px");
+    box.appendChild(s);
+  }
+  document.body.appendChild(box); setTimeout(() => box.remove(), 1100);
+}
+function banner(text) {
+  const b = document.createElement("div"); b.className = "banner"; b.textContent = text;
+  document.body.appendChild(b); setTimeout(() => b.remove(), 2200);
+}
+
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  state.mode = b.dataset.mode;
+  document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  newRound();
+});
+
+function start(data) {
+  if (data && data.mode) {
+    Object.assign(state, data);
+    document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-pressed", x.dataset.mode === state.mode));
+  }
+  renderKids(); renderScore(); renderRecord(); newRound();
+  connectAccount();
+}
+window.claude?.hot?.snapshot?.(() => ({ ...state }));
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
+</body>
+</html>
