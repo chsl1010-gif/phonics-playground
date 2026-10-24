@@ -2,7 +2,7 @@
 
 그림과 소리로 영어 글자의 소리(파닉스)를 익히는 어린이용 놀이예요.
 
-**바로 하기: https://phonics-playground.vercel.app**
+**바로 하기: https://phonics-playground-jade.vercel.app**
 
 ## 놀이 방법
 
@@ -21,4 +21,4 @@
 
 ## 만들기
 
-`index.html` 파일 하나로 되어 있어요. 영어 소리는 브라우저의 읽어 주기 기능을 써서, 기기마다 목소리가 달라요.
+`index.html` 파일 하나로 되어 있어요. `main` 브랜치에 올리면 Vercel이 자동으로 배포해요. 영어 소리는 브라우저의 읽어 주기 기능을 써서, 기기마다 목소리가 달라요.
